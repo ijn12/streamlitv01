@@ -2,12 +2,15 @@ import streamlit as st
 import pandas as pd
 import io
 from docx import Document
-import openai
+from openai import OpenAI
 
 # Step 1: Input for OpenAI API key
 api_key = st.text_input("Enter your OpenAI API Key", type="password")
 
 if api_key:
+    # Initialize the OpenAI client once the API key is provided
+    client = OpenAI(api_key=api_key)
+
     # Step 2: Upload XLSX file
     uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx"])
 
@@ -29,8 +32,7 @@ if api_key:
         if st.button("Generate Executive Summary"):
             with st.spinner("Generating executive summary..."):
                 try:
-                    openai.api_key = api_key
-                    response = openai.ChatCompletion.create(
+                    response = client.chat.completions.create(
                         model="gpt-4o-mini",  # Updated model
                         messages=[
                             {
@@ -41,7 +43,7 @@ if api_key:
                         temperature=0.7
                     )
                     # Extract the summary from the API response
-                    summary = response["choices"][0]["message"]["content"]
+                    summary = response.choices[0].message.content
                     st.subheader("Executive Summary:")
                     st.write(summary)
                 except Exception as e:
@@ -51,8 +53,7 @@ if api_key:
         if st.button("Refresh Executive Summary"):
             with st.spinner("Regenerating executive summary..."):
                 try:
-                    openai.api_key = api_key
-                    response = openai.ChatCompletion.create(
+                    response = client.chat.completions.create(
                         model="gpt-4o-mini",  # Updated model
                         messages=[
                             {
@@ -63,7 +64,7 @@ if api_key:
                         temperature=0.7
                     )
                     # Extract the updated summary from the API response
-                    updated_summary = response["choices"][0]["message"]["content"]
+                    updated_summary = response.choices[0].message.content
                     st.subheader("Updated Executive Summary:")
                     st.write(updated_summary)
                 except Exception as e:
