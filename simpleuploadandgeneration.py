@@ -25,13 +25,13 @@ if api_key:
         # Combine the content of all rows to send to GPT API
         combined_content = "\n".join(edited_content)
 
-        # Step 5: Generate Executive Summary with GPT-4
+        # Step 5: Generate Executive Summary with GPT-4o-mini
         if st.button("Generate Executive Summary"):
             with st.spinner("Generating executive summary..."):
                 try:
                     openai.api_key = api_key
-                    response = openai.chat_completions.create(  # Updated method for chat models
-                        model="gpt-4",
+                    response = openai.ChatCompletion.create(
+                        model="gpt-4o-mini",  # Updated model
                         messages=[
                             {
                                 "role": "user",
@@ -52,8 +52,8 @@ if api_key:
             with st.spinner("Regenerating executive summary..."):
                 try:
                     openai.api_key = api_key
-                    response = openai.chat_completions.create(  # Updated method for chat models
-                        model="gpt-4",
+                    response = openai.ChatCompletion.create(
+                        model="gpt-4o-mini",  # Updated model
                         messages=[
                             {
                                 "role": "user",
