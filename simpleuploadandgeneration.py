@@ -30,7 +30,7 @@ if api_key:
             with st.spinner("Generating executive summary..."):
                 try:
                     openai.api_key = api_key
-                    response = openai.ChatCompletion.create(
+                    response = openai.completions.create(  # Updated method
                         model="gpt-4o-mini",
                         messages=[
                             {
@@ -52,7 +52,7 @@ if api_key:
             with st.spinner("Regenerating executive summary..."):
                 try:
                     openai.api_key = api_key
-                    response = openai.ChatCompletion.create(
+                    response = openai.completions.create(  # Updated method
                         model="gpt-4o-mini",
                         messages=[
                             {
