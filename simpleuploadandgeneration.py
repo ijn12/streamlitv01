@@ -18,7 +18,10 @@ if api_key:
         # Step 3: Read Excel file into DataFrame
         df = pd.read_excel(uploaded_file, usecols="A", nrows=10)
 
-        # Step 4: Display content of column A up to row 10 in editable fields
+        # Step 4: Custom prompt input for the executive summary
+        custom_prompt = st.text_area("Enter your custom prompt for the executive summary")
+
+        # Step 5: Display content of column A up to row 10 in editable fields
         st.write("Edit the content of column A (rows 1-10):")
 
         edited_content = []
@@ -28,16 +31,18 @@ if api_key:
         # Combine the content of all rows to send to GPT API
         combined_content = "\n".join(edited_content)
 
-        # Step 5: Generate Executive Summary with GPT-4o-mini
-        if st.button("Generate Executive Summary"):
+        # Step 6: Single button for generating or refreshing the executive summary
+        if st.button("Generate/Refresh Executive Summary"):
             with st.spinner("Generating executive summary..."):
                 try:
+                    # Combine the custom prompt and the content of the rows
+                    final_prompt = f"{custom_prompt}\n{combined_content}"
                     response = client.chat.completions.create(
                         model="gpt-4o-mini",  # Updated model
                         messages=[
                             {
                                 "role": "user",
-                                "content": f"Please generate an executive summary for the following content:\n{combined_content}"
+                                "content": final_prompt
                             }
                         ],
                         temperature=0.7
@@ -48,27 +53,6 @@ if api_key:
                     st.write(summary)
                 except Exception as e:
                     st.error(f"Failed to generate summary: {e}")
-
-        # Step 6: Provide a refresh button for regenerating the summary after edits
-        if st.button("Refresh Executive Summary"):
-            with st.spinner("Regenerating executive summary..."):
-                try:
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",  # Updated model
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": f"Please generate an updated executive summary for the following updated content:\n{combined_content}"
-                            }
-                        ],
-                        temperature=0.7
-                    )
-                    # Extract the updated summary from the API response
-                    updated_summary = response.choices[0].message.content
-                    st.subheader("Updated Executive Summary:")
-                    st.write(updated_summary)
-                except Exception as e:
-                    st.error(f"Failed to regenerate summary: {e}")
 
         # Step 7: Confirm and generate DOCX file
         if st.button("Confirm and Generate Word File"):
@@ -82,9 +66,6 @@ if api_key:
             if 'summary' in locals():
                 doc.add_heading("Executive Summary", level=2)
                 doc.add_paragraph(summary)
-            if 'updated_summary' in locals():
-                doc.add_heading("Updated Executive Summary", level=2)
-                doc.add_paragraph(updated_summary)
 
             # Save the document to a BytesIO buffer
             buffer = io.BytesIO()
