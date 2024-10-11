@@ -6,7 +6,7 @@ from docx import Document
 import base64
 
 # Testing header to see if the deployment works
-st.header("Testing Deployment 9")
+st.header("Testing Deployment 10")
 
 # Sidebar inputs for OpenAI API key and file upload
 st.sidebar.header("Configuration")
@@ -16,12 +16,38 @@ uploaded_file = st.sidebar.file_uploader("Upload your Excel file", type=["xlsx"]
 # Hardcoded template path
 template_path = "template.docx"
 
+# Initialize session state variables
+if 'summary' not in st.session_state:
+    st.session_state.summary = ''
+if 'summary_locked' not in st.session_state:
+    st.session_state.summary_locked = False
+if 'edited_content' not in st.session_state:
+    st.session_state.edited_content = []
+
+def update_summary():
+    st.session_state.summary = st.session_state.new_summary
+    st.session_state.summary_locked = True
+
+def unlock_summary():
+    st.session_state.summary_locked = False
+
+def update_row(index, value):
+    st.session_state.edited_content[index] = value
+    st.session_state[f'row_{index+1}_locked'] = True
+
+def unlock_row(index):
+    st.session_state[f'row_{index+1}_locked'] = False
+
 if uploaded_file is not None:
     # Initialize the OpenAI client once the API key is provided
     client = OpenAI(api_key=api_key)
 
     # Read Excel file into DataFrame (starting from the first row)
     df = pd.read_excel(uploaded_file, usecols="A", nrows=10)
+
+    # Initialize edited_content if it's empty
+    if not st.session_state.edited_content:
+        st.session_state.edited_content = df.iloc[:, 0].tolist()
 
     # Hardcoded prompt for executive summary
     custom_prompt = "Generate an executive summary based on the following content:"
@@ -30,7 +56,7 @@ if uploaded_file is not None:
     if st.button("Generate/Refresh Executive Summary"):
         with st.spinner("Generating executive summary..."):
             try:
-                combined_content = "\n".join(df.iloc[:, 0].astype(str))
+                combined_content = "\n".join(map(str, st.session_state.edited_content))
                 final_prompt = f"{custom_prompt}\n{combined_content}"
                 response = client.chat.completions.create(
                     model="gpt-4-1106-preview",
@@ -43,53 +69,43 @@ if uploaded_file is not None:
                     temperature=0.7
                 )
                 summary = response.choices[0].message.content
-                st.session_state['summary'] = summary
-                st.session_state['summary_locked'] = False
-                st.subheader("Executive Summary:")
-                st.write(summary)
+                st.session_state.summary = summary
+                st.session_state.summary_locked = False
             except Exception as e:
                 st.error(f"Failed to generate summary: {e}")
 
-    # Editable field for the executive summary with save and edit functionality
-    if 'summary_locked' not in st.session_state:
-        st.session_state['summary_locked'] = False
-
-    if st.session_state['summary_locked']:
-        st.subheader("Executive Summary (Locked):")
-        st.write(st.session_state.get('summary', ''))
-        if st.button("Edit Executive Summary", on_click=lambda: st.experimental_rerun()):
-            st.session_state['summary_locked'] = False
+    # Display and edit executive summary
+    st.subheader("Executive Summary:")
+    if st.session_state.summary_locked:
+        st.write(st.session_state.summary)
+        if st.button("Edit Executive Summary"):
+            unlock_summary()
     else:
-        summary = st.text_area("Edit the Executive Summary", 
-                               value=st.session_state.get('summary', ''),
-                               height=200)
-        if st.button("Save Executive Summary", on_click=lambda: st.experimental_rerun()):
-            st.session_state['summary'] = summary
-            st.session_state['summary_locked'] = True
+        st.text_area("Edit the Executive Summary", 
+                     key="new_summary",
+                     value=st.session_state.summary,
+                     height=200,
+                     on_change=update_summary)
+        if st.button("Save Executive Summary"):
+            update_summary()
 
-    # Display content of column A up to row 10 in editable fields with save and edit functionality
+    # Display content of column A up to row 10 in editable fields
     st.write("Edit the content of column A (rows 1-10):")
-    edited_content = []
-    for i in range(len(df)):
+    for i, content in enumerate(st.session_state.edited_content):
         if f'row_{i+1}_locked' not in st.session_state:
             st.session_state[f'row_{i+1}_locked'] = False
 
         if st.session_state[f'row_{i+1}_locked']:
             st.write(f"Row {i+1} (Locked):")
-            st.write(st.session_state.get(f'row_{i+1}', df.iloc[i, 0]))
-            if st.button(f"Edit Row {i+1}", on_click=lambda: st.experimental_rerun()):
-                st.session_state[f'row_{i+1}_locked'] = False
-                st.experimental_rerun = None
+            st.write(content)
+            if st.button(f"Edit Row {i+1}"):
+                unlock_row(i)
         else:
-            edited_value = st.text_area(f"Row {i+1}", value=st.session_state.get(f'row_{i+1}', df.iloc[i, 0]), height=100)
-            if st.button(f"Save Row {i+1}", on_click=lambda: st.experimental_rerun()):
-                st.session_state[f'row_{i+1}'] = edited_value
-                st.session_state[f'row_{i+1}_locked'] = True
-                st.experimental_rerun()
-            edited_content.append(st.session_state.get(f'row_{i+1}', edited_value))
+            edited_value = st.text_area(f"Row {i+1}", value=content, height=100, key=f"row_{i+1}")
+            if st.button(f"Save Row {i+1}"):
+                update_row(i, edited_value)
 
     # Confirm and generate Word document
-    summary = st.session_state.get('summary', '')
     if st.button("Confirm and Generate Word Document"):
         try:
             # Load the Word template
@@ -98,12 +114,12 @@ if uploaded_file is not None:
             # Replace placeholders in the template
             for paragraph in template.paragraphs:
                 if "{{Executive_Summary}}" in paragraph.text:
-                    paragraph.text = paragraph.text.replace("{{Executive_Summary}}", summary)
+                    paragraph.text = paragraph.text.replace("{{Executive_Summary}}", st.session_state.summary)
 
-                for i, content in enumerate(edited_content):
+                for i, content in enumerate(st.session_state.edited_content):
                     placeholder = f"{{{{Row_{i+1}}}}}"
                     if placeholder in paragraph.text:
-                        paragraph.text = paragraph.text.replace(placeholder, content)
+                        paragraph.text = paragraph.text.replace(placeholder, str(content))
 
             # Save the generated document to a buffer
             buffer = io.BytesIO()
