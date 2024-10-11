@@ -6,7 +6,7 @@ from docx import Document
 import base64
 
 # Testing header to see if the deployment works
-st.header("Testing Deployment 3")
+st.header("Testing Deployment 4")
 
 # Sidebar inputs for OpenAI API key and file upload
 st.sidebar.header("Configuration")
