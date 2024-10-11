@@ -5,7 +5,7 @@ from openai import OpenAI
 from docx import Document
 
 # Testing header to see if the deployment works
-st.header("Testing Deployment 13")
+st.header("Testing Deployment 14")
 
 # Sidebar inputs for OpenAI API key, password, and file upload
 st.sidebar.header("Configuration")
@@ -37,6 +37,31 @@ def update_row(index, value):
 
 def unlock_row(index):
     st.session_state[f'row_{index+1}_locked'] = False
+
+def generate_and_download_document():
+    try:
+        # Load the Word template
+        template = Document(template_path)
+
+        # Replace placeholders in the template
+        for paragraph in template.paragraphs:
+            if "{{Executive_Summary}}" in paragraph.text:
+                paragraph.text = paragraph.text.replace("{{Executive_Summary}}", st.session_state.summary)
+
+            for i, content in enumerate(st.session_state.edited_content):
+                placeholder = f"{{{{Row_{i+1}}}}}"
+                if placeholder in paragraph.text:
+                    paragraph.text = paragraph.text.replace(placeholder, str(content))
+
+        # Save the generated document to a buffer
+        buffer = io.BytesIO()
+        template.save(buffer)
+        buffer.seek(0)
+
+        return buffer
+    except Exception as e:
+        st.error(f"Failed to generate Word document: {e}")
+        return None
 
 # Check if the password is correct
 if password == "iken":
@@ -108,36 +133,15 @@ if password == "iken":
         # Add a visual delimiter
         st.markdown("---")
 
-        # Confirm and generate Word document
-        if st.button("Confirm and Generate Word Document"):
-            try:
-                # Load the Word template
-                template = Document(template_path)
+        # Consolidated button for confirmation, generation, and download
+        if st.download_button(
+            label="Generate and Download Word Document",
+            data=generate_and_download_document,
+            file_name="generated_report.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ):
+            st.success("Document generated and downloaded successfully!")
 
-                # Replace placeholders in the template
-                for paragraph in template.paragraphs:
-                    if "{{Executive_Summary}}" in paragraph.text:
-                        paragraph.text = paragraph.text.replace("{{Executive_Summary}}", st.session_state.summary)
-
-                    for i, content in enumerate(st.session_state.edited_content):
-                        placeholder = f"{{{{Row_{i+1}}}}}"
-                        if placeholder in paragraph.text:
-                            paragraph.text = paragraph.text.replace(placeholder, str(content))
-
-                # Save the generated document to a buffer
-                buffer = io.BytesIO()
-                template.save(buffer)
-                buffer.seek(0)
-
-                # Provide the Word document for download
-                st.download_button(
-                    label="Download Word Document",
-                    data=buffer,
-                    file_name="generated_report.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-            except Exception as e:
-                st.error(f"Failed to generate Word document: {e}")
     else:
         st.warning("Please upload an Excel file to proceed.")
 else:
