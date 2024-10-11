@@ -5,7 +5,7 @@ from openai import OpenAI
 from docx import Document
 
 # Testing header to see if the deployment works
-st.header("Testing Deployment 12")
+st.header("Testing Deployment 13")
 
 # Sidebar inputs for OpenAI API key, password, and file upload
 st.sidebar.header("Configuration")
@@ -55,7 +55,7 @@ if password == "iken":
         custom_prompt = "Generate an executive summary based on the following content:"
 
         # Single button for generating or refreshing the executive summary
-        if st.button("Generate/Refresh Executive Summary (Double-click to confirm)"):
+        if st.button("Generate/Refresh Executive Summary"):
             with st.spinner("Generating executive summary..."):
                 try:
                     combined_content = "\n".join(map(str, st.session_state.edited_content))
@@ -105,8 +105,11 @@ if password == "iken":
                 if st.button(f"Save Row {i+1} (Double-click to confirm)"):
                     update_row(i, edited_value)
 
+        # Add a visual delimiter
+        st.markdown("---")
+
         # Confirm and generate Word document
-        if st.button("Confirm and Generate Word Document (Double-click to confirm)"):
+        if st.button("Confirm and Generate Word Document"):
             try:
                 # Load the Word template
                 template = Document(template_path)
@@ -139,5 +142,3 @@ if password == "iken":
         st.warning("Please upload an Excel file to proceed.")
 else:
     st.error("Incorrect password. Please enter the correct password to access the application.")
-
-    
