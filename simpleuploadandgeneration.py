@@ -10,13 +10,13 @@ st.header("Testing Deployment 3")
 
 # Sidebar inputs for OpenAI API key and file upload
 st.sidebar.header("Configuration")
-api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
+api_key = st.secrets["openai_api_key"]
 uploaded_file = st.sidebar.file_uploader("Upload your Excel file", type=["xlsx"])
 
 # Hardcoded template path
 template_path = "template.docx"
 
-if api_key and uploaded_file is not None:
+if uploaded_file is not None:
     # Initialize the OpenAI client once the API key is provided
     client = OpenAI(api_key=api_key)
 
