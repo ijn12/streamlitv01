@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 from openai import OpenAI
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from docx import Document
 import base64
 
 # Testing header to see if the deployment works
@@ -13,6 +12,9 @@ st.header("Testing Deployment 3")
 st.sidebar.header("Configuration")
 api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
 uploaded_file = st.sidebar.file_uploader("Upload your Excel file", type=["xlsx"])
+
+# Hardcoded template path
+template_path = "template.docx"
 
 if api_key and uploaded_file is not None:
     # Initialize the OpenAI client once the API key is provided
@@ -58,56 +60,37 @@ if api_key and uploaded_file is not None:
     for i in range(len(df)):
         edited_content.append(st.text_area(f"Row {i+1}", value=df.iloc[i, 0], height=100))
 
-    # Confirm and generate PDF file
-    if st.button("Confirm and Generate PDF"):
-        buffer = io.BytesIO()
-        c = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
+    # Confirm and generate Word document
+    if st.button("Confirm and Generate Word Document"):
+        try:
+            # Load the Word template
+            template = Document(template_path)
 
-        # Add title
-        c.setFont("Helvetica-Bold", 16)
-        c.drawString(50, height - 50, "Generated Content")
+            # Replace placeholders in the template
+            for paragraph in template.paragraphs:
+                if "{{Executive_Summary}}" in paragraph.text:
+                    paragraph.text = paragraph.text.replace("{{Executive_Summary}}", summary)
 
-        # Add Executive Summary
-        if summary:
-            c.setFont("Helvetica-Bold", 14)
-            c.drawString(50, height - 80, "Executive Summary")
-            c.setFont("Helvetica", 12)
-            text_object = c.beginText(50, height - 100)
-            for line in summary.split('\n'):
-                text_object.textLine(line)
-            c.drawText(text_object)
+                for i, content in enumerate(edited_content):
+                    placeholder = f"{{{{Row_{i+1}}}}}"
+                    if placeholder in paragraph.text:
+                        paragraph.text = paragraph.text.replace(placeholder, content)
 
-        # Add edited content
-        y_position = height - 200
-        for i, content in enumerate(edited_content):
-            if y_position < 50:
-                c.showPage()
-                y_position = height - 50
-            c.setFont("Helvetica", 12)
-            c.drawString(50, y_position, f"Row {i+1}:")
-            text_object = c.beginText(70, y_position - 15)
-            for line in content.split('\n'):
-                text_object.textLine(line)
-            c.drawText(text_object)
-            y_position -= 20 + (len(content.split('\n')) * 15)
+            # Save the generated document to a buffer
+            buffer = io.BytesIO()
+            template.save(buffer)
+            buffer.seek(0)
 
-        c.save()
-        buffer.seek(0)
+            # Display the Word document
+            st.subheader("Generated Word Document Preview:")
+            st.write("Word document generated successfully. Use the download button below to view or save the document.")
 
-        # Display the PDF
-        st.subheader("Generated PDF Preview:")
-        st.write("PDF generated successfully. Use the download button below to view or save the PDF.")
-
-        # Provide the PDF file for download
-        st.download_button(
-            label="Download PDF File",
-            data=buffer,
-            file_name="generated_report.pdf",
-            mime="application/pdf"
-        )
-
-        # Display PDF preview using base64 encoding
-        base64_pdf = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
+            # Provide the Word document for download
+            st.download_button(
+                label="Download Word Document",
+                data=buffer,
+                file_name="generated_report.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        except Exception as e:
+            st.error(f"Failed to generate Word document: {e}")
