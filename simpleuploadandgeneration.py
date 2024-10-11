@@ -5,7 +5,7 @@ from openai import OpenAI
 from docx import Document
 
 # Testing header to see if the deployment works
-st.header("Testing Deployment 14")
+st.header("Testing Deployment 15")
 
 # Sidebar inputs for OpenAI API key, password, and file upload
 st.sidebar.header("Configuration")
@@ -38,7 +38,7 @@ def update_row(index, value):
 def unlock_row(index):
     st.session_state[f'row_{index+1}_locked'] = False
 
-def generate_and_download_document():
+def generate_document():
     try:
         # Load the Word template
         template = Document(template_path)
@@ -134,13 +134,20 @@ if password == "iken":
         st.markdown("---")
 
         # Consolidated button for confirmation, generation, and download
-        if st.download_button(
-            label="Generate and Download Word Document",
-            data=generate_and_download_document,
-            file_name="generated_report.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ):
-            st.success("Document generated and downloaded successfully!")
+        if st.button("Confirm, Generate, and Download Word Document"):
+            with st.spinner("Generating document..."):
+                doc_buffer = generate_document()
+                if doc_buffer:
+                    st.download_button(
+                        label="Click here to download the generated document",
+                        data=doc_buffer,
+                        file_name="generated_report.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key="download_button"
+                    )
+                    st.success("Document generated successfully! Click the download button above to save it.")
+                else:
+                    st.error("Failed to generate the document. Please try again.")
 
     else:
         st.warning("Please upload an Excel file to proceed.")
