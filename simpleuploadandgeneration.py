@@ -3,10 +3,9 @@ import pandas as pd
 import io
 from openai import OpenAI
 from docx import Document
-import base64
 
 # Testing header to see if the deployment works
-st.header("Testing Deployment 10")
+st.header("Testing Deployment 11")
 
 # Sidebar inputs for OpenAI API key and file upload
 st.sidebar.header("Configuration")
@@ -23,20 +22,22 @@ if 'summary_locked' not in st.session_state:
     st.session_state.summary_locked = False
 if 'edited_content' not in st.session_state:
     st.session_state.edited_content = []
+if 'show_preview' not in st.session_state:
+    st.session_state.show_preview = False
 
 def update_summary():
     st.session_state.summary = st.session_state.new_summary
     st.session_state.summary_locked = True
 
-def unlock_summary():
-    st.session_state.summary_locked = False
+def toggle_summary_lock():
+    st.session_state.summary_locked = not st.session_state.summary_locked
 
 def update_row(index, value):
     st.session_state.edited_content[index] = value
-    st.session_state[f'row_{index+1}_locked'] = True
+    st.session_state[f'row_{index+1}_locked'] = not st.session_state[f'row_{index+1}_locked']
 
-def unlock_row(index):
-    st.session_state[f'row_{index+1}_locked'] = False
+def toggle_preview():
+    st.session_state.show_preview = not st.session_state.show_preview
 
 if uploaded_file is not None:
     # Initialize the OpenAI client once the API key is provided
@@ -68,8 +69,7 @@ if uploaded_file is not None:
                     ],
                     temperature=0.7
                 )
-                summary = response.choices[0].message.content
-                st.session_state.summary = summary
+                st.session_state.summary = response.choices[0].message.content
                 st.session_state.summary_locked = False
             except Exception as e:
                 st.error(f"Failed to generate summary: {e}")
@@ -79,13 +79,12 @@ if uploaded_file is not None:
     if st.session_state.summary_locked:
         st.write(st.session_state.summary)
         if st.button("Edit Executive Summary"):
-            unlock_summary()
+            toggle_summary_lock()
     else:
         st.text_area("Edit the Executive Summary", 
                      key="new_summary",
                      value=st.session_state.summary,
-                     height=200,
-                     on_change=update_summary)
+                     height=200)
         if st.button("Save Executive Summary"):
             update_summary()
 
@@ -95,15 +94,28 @@ if uploaded_file is not None:
         if f'row_{i+1}_locked' not in st.session_state:
             st.session_state[f'row_{i+1}_locked'] = False
 
-        if st.session_state[f'row_{i+1}_locked']:
-            st.write(f"Row {i+1} (Locked):")
-            st.write(content)
-            if st.button(f"Edit Row {i+1}"):
-                unlock_row(i)
-        else:
-            edited_value = st.text_area(f"Row {i+1}", value=content, height=100, key=f"row_{i+1}")
-            if st.button(f"Save Row {i+1}"):
-                update_row(i, edited_value)
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            if st.session_state[f'row_{i+1}_locked']:
+                st.text_area(f"Row {i+1} (Locked)", value=content, key=f"row_{i+1}", disabled=True)
+            else:
+                st.text_area(f"Row {i+1}", value=content, key=f"row_{i+1}")
+        with col2:
+            if st.button("Toggle Edit" if st.session_state[f'row_{i+1}_locked'] else "Save", key=f"button_{i+1}"):
+                update_row(i, st.session_state[f"row_{i+1}"])
+
+    # Preview button
+    if st.button("Toggle Preview"):
+        toggle_preview()
+
+    # Show preview
+    if st.session_state.show_preview:
+        st.subheader("Document Preview:")
+        st.write("Executive Summary:")
+        st.write(st.session_state.summary)
+        st.write("Content:")
+        for i, content in enumerate(st.session_state.edited_content):
+            st.write(f"Row {i+1}: {content}")
 
     # Confirm and generate Word document
     if st.button("Confirm and Generate Word Document"):
@@ -126,10 +138,6 @@ if uploaded_file is not None:
             template.save(buffer)
             buffer.seek(0)
 
-            # Display the Word document
-            st.subheader("Generated Word Document Preview:")
-            st.write("Word document generated successfully. Use the download button below to view or save the document.")
-
             # Provide the Word document for download
             st.download_button(
                 label="Download Word Document",
@@ -139,3 +147,4 @@ if uploaded_file is not None:
             )
         except Exception as e:
             st.error(f"Failed to generate Word document: {e}")
+        
