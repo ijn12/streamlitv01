@@ -6,7 +6,7 @@ from docx import Document
 import base64
 
 # Testing header to see if the deployment works
-st.header("Testing Deployment 5")
+st.header("Testing Deployment 9")
 
 # Sidebar inputs for OpenAI API key and file upload
 st.sidebar.header("Configuration")
@@ -57,13 +57,13 @@ if uploaded_file is not None:
     if st.session_state['summary_locked']:
         st.subheader("Executive Summary (Locked):")
         st.write(st.session_state.get('summary', ''))
-        if st.button("Edit Executive Summary"):
+        if st.button("Edit Executive Summary", on_click=lambda: st.experimental_rerun()):
             st.session_state['summary_locked'] = False
     else:
         summary = st.text_area("Edit the Executive Summary", 
                                value=st.session_state.get('summary', ''),
                                height=200)
-        if st.button("Save Executive Summary"):
+        if st.button("Save Executive Summary", on_click=lambda: st.experimental_rerun()):
             st.session_state['summary'] = summary
             st.session_state['summary_locked'] = True
 
@@ -77,12 +77,12 @@ if uploaded_file is not None:
         if st.session_state[f'row_{i+1}_locked']:
             st.write(f"Row {i+1} (Locked):")
             st.write(st.session_state.get(f'row_{i+1}', df.iloc[i, 0]))
-            if st.button(f"Edit Row {i+1}"):
+            if st.button(f"Edit Row {i+1}", on_click=lambda: st.experimental_rerun()):
                 st.session_state[f'row_{i+1}_locked'] = False
-                st.experimental_rerun()
+                st.experimental_rerun = None
         else:
             edited_value = st.text_area(f"Row {i+1}", value=st.session_state.get(f'row_{i+1}', df.iloc[i, 0]), height=100)
-            if st.button(f"Save Row {i+1}"):
+            if st.button(f"Save Row {i+1}", on_click=lambda: st.experimental_rerun()):
                 st.session_state[f'row_{i+1}'] = edited_value
                 st.session_state[f'row_{i+1}_locked'] = True
                 st.experimental_rerun()
