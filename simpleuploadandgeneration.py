@@ -134,7 +134,7 @@ if password == "iken":
         st.markdown("---")
 
         # Consolidated button for confirmation, generation, and download
-        if st.button("Confirm, Generate, and Download Word Document"):
+        if st.button("Confirm and Generate Word Document"):
             with st.spinner("Generating document..."):
                 doc_buffer = generate_document()
                 if doc_buffer:
