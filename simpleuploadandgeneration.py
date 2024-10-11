@@ -44,21 +44,47 @@ if uploaded_file is not None:
                 )
                 summary = response.choices[0].message.content
                 st.session_state['summary'] = summary
+                st.session_state['summary_locked'] = False
                 st.subheader("Executive Summary:")
                 st.write(summary)
             except Exception as e:
                 st.error(f"Failed to generate summary: {e}")
 
-    # Editable field for the executive summary
-    summary = st.text_area("Edit the Executive Summary", 
-                           value=st.session_state.get('summary', ''),
-                           height=200)
+    # Editable field for the executive summary with save and edit functionality
+    if 'summary_locked' not in st.session_state:
+        st.session_state['summary_locked'] = False
 
-    # Display content of column A up to row 10 in editable fields
+    if st.session_state['summary_locked']:
+        st.subheader("Executive Summary (Locked):")
+        st.write(st.session_state.get('summary', ''))
+        if st.button("Edit Executive Summary"):
+            st.session_state['summary_locked'] = False
+    else:
+        summary = st.text_area("Edit the Executive Summary", 
+                               value=st.session_state.get('summary', ''),
+                               height=200)
+        if st.button("Save Executive Summary"):
+            st.session_state['summary'] = summary
+            st.session_state['summary_locked'] = True
+
+    # Display content of column A up to row 10 in editable fields with save and edit functionality
     st.write("Edit the content of column A (rows 1-10):")
     edited_content = []
     for i in range(len(df)):
-        edited_content.append(st.text_area(f"Row {i+1}", value=df.iloc[i, 0], height=100))
+        if f'row_{i+1}_locked' not in st.session_state:
+            st.session_state[f'row_{i+1}_locked'] = False
+
+        if st.session_state[f'row_{i+1}_locked']:
+            st.write(f"Row {i+1} (Locked):")
+            st.write(st.session_state.get(f'row_{i+1}', df.iloc[i, 0]))
+            if st.button(f"Edit Row {i+1}"):
+                st.session_state[f'row_{i+1}_locked'] = False
+        else:
+            edited_value = st.text_area(f"Row {i+1}", value=st.session_state.get(f'row_{i+1}', df.iloc[i, 0]), height=100)
+            if st.button(f"Save Row {i+1}"):
+                st.session_state[f'row_{i+1}'] = edited_value
+                st.session_state[f'row_{i+1}_locked'] = True
+            edited_content.append(st.session_state.get(f'row_{i+1}', edited_value))
 
     # Confirm and generate Word document
     if st.button("Confirm and Generate Word Document"):
