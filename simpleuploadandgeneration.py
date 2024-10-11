@@ -6,7 +6,7 @@ from docx import Document
 import base64
 
 # Testing header to see if the deployment works
-st.header("Testing Deployment 4")
+st.header("Testing Deployment 5")
 
 # Sidebar inputs for OpenAI API key and file upload
 st.sidebar.header("Configuration")
@@ -79,14 +79,17 @@ if uploaded_file is not None:
             st.write(st.session_state.get(f'row_{i+1}', df.iloc[i, 0]))
             if st.button(f"Edit Row {i+1}"):
                 st.session_state[f'row_{i+1}_locked'] = False
+                st.experimental_rerun()
         else:
             edited_value = st.text_area(f"Row {i+1}", value=st.session_state.get(f'row_{i+1}', df.iloc[i, 0]), height=100)
             if st.button(f"Save Row {i+1}"):
                 st.session_state[f'row_{i+1}'] = edited_value
                 st.session_state[f'row_{i+1}_locked'] = True
+                st.experimental_rerun()
             edited_content.append(st.session_state.get(f'row_{i+1}', edited_value))
 
     # Confirm and generate Word document
+    summary = st.session_state.get('summary', '')
     if st.button("Confirm and Generate Word Document"):
         try:
             # Load the Word template
