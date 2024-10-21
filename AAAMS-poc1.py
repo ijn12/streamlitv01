@@ -106,7 +106,7 @@ Bitte verwende Schweizer Rechtschreibung und Grammatik. Starte den Bericht nicht
     except Exception as e:
         return f"Fehler bei der Generierung der Executive Summary: {e}"
 
-def generate_document(spider_chart):
+def generate_document(spider_chart, df):
     try:
         # Load the Word template
         template = Document(template_path)
@@ -126,6 +126,23 @@ def generate_document(spider_chart):
                     run = paragraph.runs[0]
                     run.text = ""
                     run.add_picture(tmpfile.name, width=Inches(6))
+
+        # Add the dataframe as a table
+        template.add_paragraph("Detaillierte Bewertungen:")
+        table = template.add_table(rows=1, cols=4)
+        table.style = 'Table Grid'
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = 'Kategorie'
+        hdr_cells[1].text = 'Frage'
+        hdr_cells[2].text = 'Antwort'
+        hdr_cells[3].text = 'Bewertung (1-5)'
+
+        for _, row in df.iterrows():
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(row['Kategorie'])
+            row_cells[1].text = str(row['Frage'])
+            row_cells[2].text = str(row['Antwort'])
+            row_cells[3].text = str(row['Bewertung (1-5)'])
 
         # Save the generated document to a buffer
         buffer = io.BytesIO()
