@@ -132,7 +132,7 @@ def generate_document(spider_chart, df):
         for table in template.tables:
             for row_index, row in enumerate(table.rows):
                 for col_index, cell in enumerate(row.cells):
-                    placeholder = f"{chr(97 + col_index)}{row_index}"
+                    placeholder = f"{{{{{'abcd'[col_index]}{row_index}}}}}"
                     if placeholder in cell.text:
                         if row_index == 0:
                             # Header row
@@ -148,14 +148,17 @@ def generate_document(spider_chart, df):
         for table in template.tables:
             for row_index, row in enumerate(table.rows):
                 for col_index, cell in enumerate(row.cells):
-                    placeholder = f"{chr(97 + col_index)}{row_index}"
+                    placeholder = f"{{{{{'abcd'[col_index]}{row_index}}}}}"
                     if placeholder in cell.text:
                         if row_index == 0:
                             # Header row
-                            cell.text = cell.text.replace(placeholder, df.columns[col_index])
+                            replacement = df.columns[col_index]
                         elif row_index - 1 < len(df):
                             # Data rows
-                            cell.text = cell.text.replace(placeholder, str(df.iloc[row_index - 1, col_index]))
+                            replacement = str(df.iloc[row_index - 1, col_index])
+                        else:
+                            replacement = "N/A"  # For rows beyond DataFrame length
+                        cell.text = cell.text.replace(placeholder, replacement)
 
         # Save the generated document to a buffer
         buffer = io.BytesIO()
