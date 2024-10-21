@@ -293,7 +293,7 @@ Gib nur eine ganze Zahl zwischen 1 und 5 zurück. Wenn keine Antwort vorhanden i
             # Consolidated button for generation and download
             if st.button("Generate and download Word document"):
                 with st.spinner("Generiere Dokument..."):
-                    doc_buffer = generate_document(spider_chart)
+                    doc_buffer = generate_document(spider_chart, st.session_state.new_df)
                     if doc_buffer:
                         st.download_button(
                             label="Klicken Sie hier, um das generierte Dokument herunterzuladen",
