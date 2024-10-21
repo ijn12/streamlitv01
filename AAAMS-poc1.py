@@ -127,23 +127,6 @@ def generate_document(spider_chart, df):
                     run.text = ""
                     run.add_picture(tmpfile.name, width=Inches(6))
 
-        # Testing block: Print all placeholders and their replacements
-        print("Placeholder Replacements:")
-        for table in template.tables:
-            for row_index, row in enumerate(table.rows):
-                for col_index, cell in enumerate(row.cells):
-                    placeholder = f"{{{{{'abcd'[col_index]}{row_index}}}}}"
-                    if placeholder in cell.text:
-                        if row_index == 0:
-                            # Header row
-                            replacement = df.columns[col_index]
-                        elif row_index - 1 < len(df):
-                            # Data rows
-                            replacement = str(df.iloc[row_index - 1, col_index])
-                        else:
-                            replacement = "N/A"  # For rows beyond DataFrame length
-                        print(f"Placeholder: {placeholder}, Replacement: {replacement}")
-
         # Replace placeholders in the table
         for table in template.tables:
             for row_index, row in enumerate(table.rows):
