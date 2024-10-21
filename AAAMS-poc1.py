@@ -111,28 +111,36 @@ def generate_document(spider_chart, df):
         # Load the Word template
         template = Document(template_path)
 
+        print("Template loaded successfully")
+        print(f"Number of tables in template: {len(template.tables)}")
+
         # Save the spider chart to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
             spider_chart.write_image(tmpfile.name, format="png", scale=2)  # Higher resolution
             
-            # Replace placeholders in the template
-            for paragraph in template.paragraphs:
-                if "{{Executive_Summary}}" in paragraph.text:
-                    paragraph.text = paragraph.text.replace("{{Executive_Summary}}", st.session_state.executive_summary)
-                if "{{Company_Name}}" in paragraph.text:
-                    paragraph.text = paragraph.text.replace("{{Company_Name}}", st.session_state.selected_company)
-                if "{{Spider_Chart}}" in paragraph.text:
-                    # Replace the placeholder with the image
-                    run = paragraph.runs[0]
-                    run.text = ""
-                    run.add_picture(tmpfile.name, width=Inches(6))
+        # Replace placeholders in the template
+        for paragraph in template.paragraphs:
+            if "{{Executive_Summary}}" in paragraph.text:
+                paragraph.text = paragraph.text.replace("{{Executive_Summary}}", st.session_state.executive_summary)
+            if "{{Company_Name}}" in paragraph.text:
+                paragraph.text = paragraph.text.replace("{{Company_Name}}", st.session_state.selected_company)
+            if "{{Spider_Chart}}" in paragraph.text:
+                # Replace the placeholder with the image
+                run = paragraph.runs[0]
+                run.text = ""
+                run.add_picture(tmpfile.name, width=Inches(6))
+
+        print("Paragraphs processed")
 
         # Replace placeholders in the table
-        for table in template.tables:
+        for table_index, table in enumerate(template.tables):
+            print(f"Processing table {table_index + 1}")
             for row_index, row in enumerate(table.rows):
                 for col_index, cell in enumerate(row.cells):
-                    placeholder = f"{{{{{'abcd'[col_index]}{row_index}}}}}"
+                    placeholder = f"{{{{{{{{col_index}{row_index}}}}}}}}"
+                    print(f"Checking placeholder: {placeholder}")
                     if placeholder in cell.text:
+                        print(f"Placeholder {placeholder} found in cell")
                         if row_index == 0:
                             # Header row
                             replacement = df.columns[col_index]
@@ -141,16 +149,24 @@ def generate_document(spider_chart, df):
                             replacement = str(df.iloc[row_index - 1, col_index])
                         else:
                             replacement = "N/A"  # For rows beyond DataFrame length
+                        print(f"Replacing {placeholder} with {replacement}")
                         cell.text = cell.text.replace(placeholder, replacement)
+                    else:
+                        print(f"Placeholder {placeholder} not found in cell")
+
+        print("Table processing completed")
 
         # Save the generated document to a buffer
         buffer = io.BytesIO()
         template.save(buffer)
         buffer.seek(0)
 
+        print("Document saved to buffer")
+
         return buffer
     except Exception as e:
         st.error(f"Fehler bei der Generierung des Word-Dokuments: {e}")
+        print(f"Error in generate_document: {e}")
         return None
 
 if password == correct_password:
