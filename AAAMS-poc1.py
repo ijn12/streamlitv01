@@ -89,7 +89,7 @@ Bitte erstelle eine umfassende Executive Summary, die:
 3. Eine Gesamtbewertung der Leistung des Unternehmens über alle Kategorien hinweg liefert
 
 Die Zusammenfassung sollte prägnant, aber informativ sein und für eine Überprüfung auf Führungsebene geeignet sein. 
-Bitte verwende Schweizer Rechtschreibung und Grammatik. Starte den Bericht nicht mit einem Titel, sonder beginne direkt mit dem Inhalt."""
+Bitte verwende Schweizer Rechtschreibung und Grammatik. Starte den Bericht nicht mit einem Titel, sonder beginne direkt mit dem Inhalt. Keine fettgedruckte Formatierung."""
 
     try:
         response = client.chat.completions.create(
@@ -132,29 +132,37 @@ def generate_document(spider_chart, df):
 
         print("Paragraphs processed")
 
-        # Replace placeholders in the table
-        for table_index, table in enumerate(template.tables):
-            print(f"Processing table {table_index + 1}")
-            for row_index, row in enumerate(table.rows):
-                for col_index, cell in enumerate(row.cells):
-                    placeholder = f"col_index{col_index}row_index{row_index}"
-                    print(f"Checking placeholder: {placeholder}")
-                    if placeholder in cell.text:
-                        print(f"Placeholder {placeholder} found in cell")
+        # Replace placeholders in the entire document
+        for paragraph in template.paragraphs:
+            for row_index in range(len(df) + 1):  # +1 for header row
+                for col_index in range(len(df.columns)):
+                    placeholder = f"{{{{col_index{col_index}row_index{row_index}}}}}"
+                    if placeholder in paragraph.text:
                         if row_index == 0:
                             # Header row
-                            replacement = df.columns[col_index]
-                        elif row_index - 1 < len(df):
+                            replacement = str(df.columns[col_index])
+                        else:
                             # Data rows
                             replacement = str(df.iloc[row_index - 1, col_index])
-                        else:
-                            replacement = "N/A"  # For rows beyond DataFrame length
-                        print(f"Replacing {placeholder} with {replacement}")
-                        cell.text = cell.text.replace(placeholder, replacement)
-                    else:
-                        print(f"Placeholder {placeholder} not found in cell")
+                        paragraph.text = paragraph.text.replace(placeholder, replacement)
 
-        print("Table processing completed")
+        # Also replace placeholders in table cells
+        for table in template.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for row_index in range(len(df) + 1):  # +1 for header row
+                        for col_index in range(len(df.columns)):
+                            placeholder = f"{{{{col_index{col_index}row_index{row_index}}}}}"
+                            if placeholder in cell.text:
+                                if row_index == 0:
+                                    # Header row
+                                    replacement = str(df.columns[col_index])
+                                else:
+                                    # Data rows
+                                    replacement = str(df.iloc[row_index - 1, col_index])
+                                cell.text = cell.text.replace(placeholder, replacement)
+
+        print("Document processing completed")
 
         # Save the generated document to a buffer
         buffer = io.BytesIO()
