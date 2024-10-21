@@ -12,7 +12,7 @@ import tempfile
 st.set_page_config(page_title="Excel Data Processor", layout="wide")
 
 # Sidebar for configuration
-st.sidebar.header("Configuration")
+st.sidebar.header("Configuration v12")
 
 # Password protection
 password = st.sidebar.text_input("Enter password", type="password")
