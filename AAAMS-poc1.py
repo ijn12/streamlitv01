@@ -12,7 +12,7 @@ import tempfile
 st.set_page_config(page_title="Excel Data Processor", layout="wide")
 
 # Sidebar for configuration
-st.sidebar.header("Configuration v12")
+st.sidebar.header("Configuration v14")
 
 # Password protection
 password = st.sidebar.text_input("Enter password", type="password")
@@ -133,7 +133,7 @@ def generate_document(spider_chart, df):
         print("Paragraphs processed")
 
         # Replace placeholders in the entire document
-        for paragraph in template.paragraphs:
+        for paragraph in template.paragraphs: 
             for row_index in range(len(df) + 1):  # +1 for header row
                 for col_index in range(len(df.columns)):
                     placeholder = f"{{{{c{col_index}r{row_index}}}}}"
