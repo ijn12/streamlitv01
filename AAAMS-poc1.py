@@ -137,7 +137,7 @@ def generate_document(spider_chart, df):
             print(f"Processing table {table_index + 1}")
             for row_index, row in enumerate(table.rows):
                 for col_index, cell in enumerate(row.cells):
-                    placeholder = f"{{{{{{{{col_index}{row_index}}}}}}}}"
+                    placeholder = f"col_index{col_index}row_index{row_index}"
                     print(f"Checking placeholder: {placeholder}")
                     if placeholder in cell.text:
                         print(f"Placeholder {placeholder} found in cell")
