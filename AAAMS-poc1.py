@@ -127,22 +127,18 @@ def generate_document(spider_chart, df):
                     run.text = ""
                     run.add_picture(tmpfile.name, width=Inches(6))
 
-        # Add the dataframe as a table
-        template.add_paragraph("Detaillierte Bewertungen:")
-        table = template.add_table(rows=1, cols=4)
-        table.style = 'Table Grid'
-        hdr_cells = table.rows[0].cells
-        hdr_cells[0].text = 'Kategorie'
-        hdr_cells[1].text = 'Frage'
-        hdr_cells[2].text = 'Antwort'
-        hdr_cells[3].text = 'Bewertung (1-5)'
-
-        for _, row in df.iterrows():
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(row['Kategorie'])
-            row_cells[1].text = str(row['Frage'])
-            row_cells[2].text = str(row['Antwort'])
-            row_cells[3].text = str(row['Bewertung (1-5)'])
+        # Replace placeholders in the table
+        for table in template.tables:
+            for row_index, row in enumerate(table.rows):
+                for col_index, cell in enumerate(row.cells):
+                    placeholder = f"{chr(97 + col_index)}{row_index}"
+                    if placeholder in cell.text:
+                        if row_index == 0:
+                            # Header row
+                            cell.text = cell.text.replace(placeholder, df.columns[col_index])
+                        elif row_index - 1 < len(df):
+                            # Data rows
+                            cell.text = cell.text.replace(placeholder, str(df.iloc[row_index - 1, col_index]))
 
         # Save the generated document to a buffer
         buffer = io.BytesIO()
