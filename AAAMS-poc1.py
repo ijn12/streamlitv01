@@ -136,7 +136,7 @@ def generate_document(spider_chart, df):
         for paragraph in template.paragraphs:
             for row_index in range(len(df) + 1):  # +1 for header row
                 for col_index in range(len(df.columns)):
-                    placeholder = f"{{{{{col_index}{row_index}}}}}"
+                    placeholder = f"{{{{c{col_index}r{row_index}}}}}"
                     if placeholder in paragraph.text:
                         if row_index == 0:
                             # Header row
@@ -152,7 +152,7 @@ def generate_document(spider_chart, df):
                 for cell in row.cells:
                     for row_index in range(len(df) + 1):  # +1 for header row
                         for col_index in range(len(df.columns)):
-                            placeholder = f"{{{{{col_index}{row_index}}}}}"
+                            placeholder = f"{{{{c{col_index}r{row_index}}}}}"
                             if placeholder in cell.text:
                                 if row_index == 0:
                                     # Header row
